@@ -1,27 +1,46 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Upload } from "lucide-react";
 
 const AddItem = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     price: "",
     img: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    // update form state
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    // Static functionality - just show alert for now
-    alert(`Product "${form.name}" would be added! (Static demo)`);
+    try {
+      const response = await fetch("/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-    // Reset form
-    setForm({ name: "", price: "", img: "" });
+      if (response.ok) {
+        await response.json();
+        setForm({ name: "", price: "", img: "" });
+        navigate("/products");
+      } else {
+        throw new Error("Failed to add product");
+      }
+    } catch (error) {
+      console.error("Error adding product:", error);
+      alert("Error adding product. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,7 +101,7 @@ const AddItem = () => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Product Image
+                Product Image URL
               </label>
               <div className="relative">
                 <input
@@ -100,16 +119,17 @@ const AddItem = () => {
                 />
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Enter a valid image URL
+                Enter a valid image URL (e.g., https://example.com/image.jpg)
               </p>
             </div>
 
             <button
               type="submit"
-              className="w-full py-4 text-lg font-semibold flex items-center justify-center gap-2 rounded-xl"
+              disabled={loading}
+              className="w-full py-4 text-lg font-semibold flex items-center justify-center gap-2 rounded-xl disabled:opacity-50"
             >
               <Plus size={20} />
-              Add Product
+              {loading ? "Adding Product..." : "Add Product"}
             </button>
           </form>
         </div>
